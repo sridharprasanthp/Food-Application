@@ -1,0 +1,26 @@
+/* Customize the label (the container) */
+#hey {
+    display: block;
+    position: relative;
+    cursor: pointer;
+    font-size: 22px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+input[type=checkbox]:disabled 
+{
+  display: block;
+  position: relative;
+  background-color: grey;
+  cursor: pointer;
+  font-size: 22px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; 
+}
+  
+  

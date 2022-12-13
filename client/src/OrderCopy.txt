@@ -1,0 +1,482 @@
+import React from 'react';
+import brkfasta from "../brkfast.jpg";
+import luncha from "../lunch.jpg";
+import dinnera from "../dinner.jpg";
+import "./Order.css";
+import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Spinner from './Spinner';
+import { DownloadTableExcel } from 'react-export-table-to-excel';
+import Dates from './Dates'
+import Foodss from './Foodss'
+import Tbody from './Tbody'
+axios.defaults.withCredentials = true;
+
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+export default function Order() {
+  var today = new Date();
+  var datess = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+  const [breakfast, setBreakfast] = useState(Boolean);
+  const [lunch, setLunch] = useState(Boolean)
+  const [dinner, setDinner] = useState(Boolean);
+  const [data, setData] = useState([])
+  const [datas, setDatas] = useState([])
+  const [order, setOrder] = useState([])
+  const [search, setSearch] = useState('');
+  const [datenew, setDateNew] = useState(datess);
+  const [message,setMessage] = useState("")
+  const tomorrow = new Date();
+  tomorrow.setDate(new Date().getDate() + 1)
+  const nextdate = tomorrow.toLocaleDateString('en-US');
+  const time = new Date(Date.now()).toLocaleTimeString('en-US', { hour12: false }) >= '21:00:00'
+  const navigate = useNavigate();
+  const tableRef = useRef(null);
+  const [filter, setFilter] = useState(new Date().toLocaleDateString())
+
+  function edit(id) {
+    navigate(`/user/${id}`)
+  }
+  function view() {
+    navigate(`/singleview`)
+  }
+
+
+  function submit(e) {
+    e.preventDefault()
+    if (new Date(Date.now()).toLocaleTimeString('en-US', { hour12: false }) >= '21:00:00') { // change as per the time
+      window.location.reload(false)
+    }
+    else {
+      const datas = {
+        empid: data.password,
+        date: new Date(datenew).toLocaleDateString("en-US"),
+        breakfast: breakfast,
+        lunch: lunch,
+        dinner: dinner
+      }
+      // console.log(datas);
+      axios.post(`http://172.16.0.188:3001/orderfood`, datas).then(res => setMessage(res.data.message))
+    }
+  
+  }
+  if(message === "Successfully Ordered")
+  {
+    alert('Successfully Ordered!!!')
+    window.location.reload(false)
+  }
+  if(message === "Already Ordered")
+  {
+    alert('Already Ordered!!!')
+    window.location.reload(false)
+  }
+
+  useEffect(() => {
+    axios.get(`http://172.16.0.188:3001/user`, { withCredentials: true }).then(res => setData(res.data))
+  }, [])
+
+  function logout() {
+    axios.get(`http://172.16.0.188:3001/logout`).then(res => res.data.message === "Successfully Logout" ? navigate('/') : alert('Invalid'))
+    //  navigate('/Login')
+  }
+
+  useEffect(() => {
+    axios.get(`http://172.16.0.188:3001/aggregate`).then(res => setDatas(res.data))
+  }, [])
+
+
+  //update
+  useEffect(() => {
+    axios.get(`http://172.16.0.188:3001/getorderedfood`).then(res => setOrder(res.data))
+  }, [])
+ 
+  let username = order.filter((dat) => {
+    return dat.empid === data.password && dat.date === new Date(Date.now()).toLocaleDateString('en-US') || dat.empid === data.password && dat.date === nextdate
+  })
+
+  // function edit(id) {
+  //   navigate(`/user/${id}`)
+  // }
+
+  function backtohome() {
+    navigate(`/`)
+  }
+  //update
+
+  //Tables
+
+  const searches = (data) => {
+    return data.filter((us) => us.password.toLowerCase().includes(search) || us.name.toLowerCase().includes(search) || us.name.includes(search) || us.name.toUpperCase().includes(search))
+  }
+  // let breakfasttotalcount = order.filter((dat) => {
+  //   return new Date(dat.date).getMonth() + 1 == new Date(filter).getMonth() + 1 && dat.breakfast === "true"
+  // })
+
+  // let lunchtotalcount = order.filter((dat) => {
+  //   return new Date(dat.date).getMonth() + 1 == new Date(filter).getMonth() + 1 && dat.lunch === "true"
+  // })
+  // let dinnertotalcount = order.filter((dat) => {
+  //   return new Date(dat.date).getMonth() + 1 == new Date(filter).getMonth() + 1 && dat.dinner === "true"
+  // })
+  // let arraydate = [];
+  // const dates = new Date(filter);
+  // const currentYear = dates.getFullYear();
+  // const currentMonth = dates.getMonth() + 1;
+  // const daysInCurrentMonth = getDaysInMonth(currentYear, currentMonth);
+
+  // for (var i = 1; i <= daysInCurrentMonth; i++) {
+  //   arraydate.push(currentMonth + "/" + i + "/" + currentYear);
+  // }
+  // function Tbody({ datas }) {
+  //   let brkf = null;
+  //   let lunc = null;
+  //   let dinn = null;
+
+  //   if (new Date(filter).toLocaleDateString("en-US")) {
+
+  //     return (
+  //       <tbody>
+  //         {datas.filter((gets) => gets._id !== "638041665140bfbdbc1f5d4a").map((userdata) => <>
+  //           <p style={{ display: "none" }}>{brkf = null}</p>
+  //           <p style={{ display: "none" }}>{lunc = null}</p>
+  //           <p style={{ display: "none" }}>{dinn = null}</p>
+  //           <tr key={userdata._id} style={{ borderBottom: "2px solid black" }}>
+  //             <td className="ff-secondary text-center text-dark fw-normal" style={{ textAlign: "center", borderRight: "2px solid black" }}>{userdata.name}</td>
+  //             <td className="ff-secondary text-center text-dark fw-normal" style={{ textAlign: "center", borderRight: "2px solid black" }}>{userdata.password}</td>
+  //             <td className="ff-secondary text-center text-dark fw-normal" style={{ borderRight: "2px solid black" }}>
+  //               {userdata.date.map((userbreakfast) => { new Date(userbreakfast.date).getMonth() + 1 === new Date(filter).getMonth() + 1 && userbreakfast.breakfast === "true" ? <>{brkf++}</> : <></> }
+  //               )}
+  //               {brkf === null ? <p style={{ textAlign: "center" }}>-</p> : <p style={{ textAlign: "center" }}>{brkf}</p>}
+  //             </td>
+
+  //             <td className="ff-secondary text-center text-dark fw-normal" style={{ borderRight: "2px solid black" }}>
+  //               {userdata.date.map((userbreakfast) => { new Date(userbreakfast.date).getMonth() + 1 === new Date(filter).getMonth() + 1 && userbreakfast.lunch === "true" ? <>{lunc++}</> : <></> }
+  //               )}
+  //               {lunc === null ? <p style={{ textAlign: "center" }}>-</p> : <p style={{ textAlign: "center" }}>{lunc}</p>}
+  //             </td>
+
+  //             <td className="ff-secondary text-center text-dark fw-normal" style={{ borderRight: "2px solid black" }}>
+  //               {userdata.date.map((userbreakfast) => { new Date(userbreakfast.date).getMonth() + 1 === new Date(filter).getMonth() + 1 && userbreakfast.dinner === "true" ? <>{dinn++}</> : <></> }
+  //               )}
+  //               {dinn === null ? <p style={{ textAlign: "center" }}>-</p> : <p style={{ textAlign: "center" }}>{dinn}</p>}
+  //             </td>
+  //             <td className="ff-secondary text-center text-dark fw-normal" style={{ borderRight: "2px solid black" }}>
+  //               {brkf === null ? <p style={{ textAlign: "center" }}>-</p> : <p style={{ textAlign: "center" }}>{brkf * 25}</p>}
+  //             </td>
+  //             <td className="ff-secondary text-center text-dark fw-normal" style={{ borderRight: "2px solid black" }}>
+  //               {lunc === null ? <p style={{ textAlign: "center" }}>-</p> : <p style={{ textAlign: "center" }}>{lunc * 50}</p>}
+  //             </td>
+  //             <td className="ff-secondary text-center text-dark fw-normal" style={{ borderRight: "2px solid black" }}>
+  //               {dinn === null ? <p style={{ textAlign: "center" }}>-</p> : <p style={{ textAlign: "center" }}>{dinn * 35}</p>}
+  //             </td>
+  //             {arraydate.map((arraydate) => <>
+
+  //               <td className="ff-secondary text-center text-dark  fw-normal">
+  //                 {userdata.date.filter((date) => date.date === arraydate).map((userdatadate, index) =>
+  //                   <>
+  //                     <>{userdatadate.breakfast === "true" ? <>✅</> : <>-</>}
+  //                     </>
+  //                   </>
+  //                 )}
+  //               </td>
+  //               <td className="ff-secondary text-center text-dark  fw-normal">
+  //                 {userdata.date.filter((date) => date.date === arraydate).map((userdatadate, index) => <>
+  //                   <>
+  //                     {userdatadate.lunch === "true" ? <>✅</> : <>-</>}
+  //                   </>
+  //                 </>
+  //                 )}
+  //               </td>
+  //               <td className="ff-secondary text-center text-dark  fw-normal" style={{ borderRight: "2px solid black" }}>
+  //                 {userdata.date.filter((date) => date.date === arraydate).map((userdatadate, index) => <>
+  //                   <>{userdatadate.dinner === "true" ? <>✅</> : <>-</>}
+  //                   </>
+  //                 </>
+  //                 )}
+  //               </td>
+
+  //             </>
+  //             )}
+  //           </tr>
+  //         </>
+  //         )}
+  //         <tr className="ff-secondary text-center text-dark fw-normal">
+  //           <td colSpan="2" style={{ borderBottom: "2px solid black", borderRight: "2px solid black" }}>Total</td>
+  //           <td style={{ borderBottom: "2px solid black", borderRight: "2px solid black" }}>{breakfasttotalcount.length}</td>
+  //           <td style={{ borderBottom: "2px solid black", borderRight: "2px solid black" }}>{lunchtotalcount.length}</td>
+  //           <td style={{ borderBottom: "2px solid black", borderRight: "2px solid black" }}> {dinnertotalcount.length}</td>
+  //           <td style={{ borderBottom: "2px solid black", borderRight: "2px solid black" }}>{breakfasttotalcount.length * 25}</td>
+  //           <td style={{ borderBottom: "2px solid black", borderRight: "2px solid black" }}>{lunchtotalcount.length * 50}</td>
+  //           <td style={{ borderBottom: "2px solid black", borderRight: "2px solid black" }}>{dinnertotalcount.length * 35}</td>
+  //         {arraydate.map( (gett) => <>
+  //           <td  style={{ borderBottom: "2px solid black", borderRight: "2px solid black" }}></td>
+  //           <td  style={{ borderBottom: "2px solid black", borderRight: "2px solid black" }}></td>
+  //           <td  style={{ borderBottom: "2px solid black", borderRight: "2px solid black" }}></td>
+  //         </>)}
+
+  //         </tr>
+  //       </tbody>)
+  //   }
+
+  // }
+  function changedates(e) {
+    setFilter(e.target.value);
+  }
+  //Tables
+  const date11 = new Date(Date.now()).toLocaleDateString();
+  const today1 = new Date(); const yyyy = today1. getFullYear(); let mm = today1. getMonth() + 1; // Months start at 0! 
+  let dd = today1. getDate();
+  let dn = today1. getDate()+1;
+  if (dd < 10) dd = '0' + dd;
+  if (dn < 10) dn = '0' + dn;
+  if (mm < 10) mm = '0' + mm;
+const formattedToday = dd + '-' + mm + '-' + yyyy;
+const formattedNext = dn + '-' + mm + '-' + yyyy;
+
+
+
+
+  if (data.length === 0) {
+    return (
+
+      <div class="container-xxl py-6 wow fadeInUp" data-wow-delay="0.1s">
+        <div class="container text-center">
+          <div class="row justify-content-center">
+            <div class="col-lg-6">
+              <i class="bi bi-exclamation-triangle display-1 text-primary"></i>
+              <h1 class="display-1">404</h1>
+              <h1 class="mb-4">Page Not Found</h1>
+              <p class="mb-4">We’re sorry, the page you have looked for does not exist in our website! Maybe go to our login page and try again?</p>
+              <button class="btn btn-primary rounded-pill py-3 px-5" type="button" onClick={backtohome}>Go Back To Home</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
+
+
+
+
+  else if (data.password === "admin") {
+
+
+
+
+    return (
+      <>
+        <div class="container-fluid position-relative d-flex" style={{ backgroundColor: "white" }}>
+          <div className="content mx-auto">
+            <div className="container-fluid py-0">
+              <div class="container-fluid py-1 bg-dark hero-header">
+                <div class="container text-center my-5 pt-0 pb-1">
+                  <h2 className="section-title ff-secondary text-center text-primary fw-normal">Food Attendees</h2>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row", padding: "1em" }}>
+
+
+                <label>
+                  <input type="month" onChange={changedates} className='p-1' /> </label>
+                <div className="row g-4">
+                  <div className="col-12 mx-auto">
+                    <input class="form-control form-control-sm search-input fuzzy-search" type="text" placeholder="Search..." aria-label="Search" onChange={(e) => { setSearch(e.target.value) }}></input>
+                  </div>
+                </div>
+                <DownloadTableExcel
+                  filename="Food Ordered"
+                  sheet="Food"
+                  currentTableRef={tableRef.current}
+                >
+                  <button className="btn btn-success mx-3"> Download Excel</button>
+                </DownloadTableExcel>
+                <button onClick={logout} className="btn btn-primary me-3 ">Logout</button>
+              </div>
+            </div>
+
+
+            <div className="container-fluid pt-4 ">
+              <div className="row g-4">
+                <div className="col-12">
+                  <div className="bg-light rounded h-100 p-4">
+                    {/* <h6 style={{color:"white"}} className="mb-4">Responsive Table</h6> */}
+                    <div className="table-responsive" style={{ border: "2px solid black", borderRadius: "6px 6px 6px 6px" }}>
+                      <table ref={tableRef} class="table">
+                        <thead>
+                          <tr>
+                            <th className="ff-secondary text-center text-dark fw-normal" style={{ borderRight: "2px solid black", borderBottom: "2px solid black" }} scope="col" rowSpan="2">Employee <br /><br /> </th>
+                            <th className="ff-secondary text-center text-dark fw-normal" style={{ borderRight: "2px solid black", borderBottom: "2px solid black" }} scope="col" rowSpan="2">ID <br /><br /></th>
+                            <th className='ff-secondary text-center text-dark fw-normal' style={{ borderRight: "2px solid black", borderBottom: "2px solid black" }} colSpan="3" >Count<br></br></th>
+                            <th className='ff-secondary text-center text-dark fw-normal' style={{ borderRight: "2px solid black", borderBottom: "2px solid black" }} colSpan="3" >Amount<br></br></th>
+                            <Dates filter = {filter}></Dates>
+                          </tr>
+                          <tr>
+                            <Foodss filter = {filter}></Foodss>
+                          </tr>
+                        </thead>
+                        <Tbody datas={searches(datas)} search = {search} filter = {filter}></Tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+
+  else if (data.password !== "admin") {
+    return (
+      <>
+        <form className="container-xxl bg-white p-0" onSubmit={submit}>
+          <div className="container-xxl py-0">
+            <div class="container-xxl py-1 bg-dark hero-header">
+              <div class="container text-center my-5 pt-0 pb-1">
+                <h5 className="section-title ff-secondary text-center text-primary fw-normal">Food Menu</h5>
+                <h1 className="mb-5" style={{ color: "white" }}>Check Your Meal Today</h1>
+                <div className="row g-5">
+                  <label className="ff-secondary text-center text-primary fw-normal col-3 px-0 "> Date
+                    <input type="date" class="btn btn-light w-50" value={datenew} onChange={(e) => setDateNew(e.target.value)} />
+                  </label>
+                  <div className="col-6">
+                    <button className="btn btn-primary " type="button" onClick={() => { view() }}>View Ordered</button>
+                  </div>
+                  <div className="col-3 px-0 ">
+                    <button className="btn btn-secondary " type="button" onClick={logout}>Logout</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          {/* Time Out!! ☹️ Sorry Contact Your Respective Admin */}
+
+
+          <div className="container-xxl pt-0 pb-0">
+            <div className="container">
+              {time ?
+                <div class="container-xxl py-6 wow fadeInUp" data-wow-delay="0.1s">
+                  <div class="container text-center">
+                    <div class="row justify-content-center">
+                      <div class="col-lg-6">
+                        <i class="bi bi-exclamation-triangle display-1 text-primary"></i>
+                        <h1 class="display-1">404</h1>
+                        <h1 class="mb-4">Page Not Found</h1>
+                        <p class="mb-4">Time Out!! ☹️ Sorry Contact Your Respective Admin </p>
+                        <button class="btn btn-primary rounded-pill py-3 px-5 my-3" type="button" onClick={logout}>Go Back To Home</button>
+                      </div>
+                    </div>
+                  </div>
+                </div> :
+                <div className="row g-5" >
+
+                  {new Date(datenew).toLocaleDateString("en-US") === new Date().toLocaleDateString("en-US") || new Date(datenew).toLocaleDateString("en-US") > nextdate || new Date(datenew).toLocaleDateString("en-US") < new Date().toLocaleDateString("en-US") ?
+                    <div className="col-lg-4   wow fadeInUp" data-wow-delay="0.1s">
+                      <label id="hey" className=" service-item team-item text-center rounded overflow-hidden">
+                        <div className="rounded-circle overflow-hidden m-4">
+                          <img className="img-fluid" src={brkfasta} alt="No pic" />
+                        </div>
+                        <i className="fa fa-coffee fa-2x text-primary" />
+                        <h5 className="mb-0">Breakfast</h5>
+                        <div className="justify-content-center">
+                          <h5 style={{color:"red"}}>Time Out!!</h5>
+                        </div>
+                      </label></div> 
+                      : 
+                      <div className="col-lg-4   wow fadeInUp" data-wow-delay="0.1s">
+                      <label id="hey" className=" service-item team-item text-center rounded overflow-hidden">
+                        <div className="rounded-circle overflow-hidden m-5">
+                          <img className="img-fluid" src={brkfasta} alt="No pic" />
+                        </div>
+                        <i className="fa fa-coffee fa-2x text-primary" />
+                        <h5 className="mb-0">Breakfast</h5>
+                        <div className="d-flex justify-content-center">
+                          <input type='checkbox' className="form-check-input btn-square my-2" onChange={(e) => setBreakfast(e.target.checked)} ></input>
+                        </div>
+                      </label>
+                    </div>}
+
+                  {new Date(datenew).toLocaleDateString("en-US") > new Date().toLocaleDateString("en-US") || new Date(datenew).toLocaleDateString("en-US") < new Date().toLocaleDateString("en-US") || new Date().toLocaleTimeString('en-US', { hour12: false }) >= '10:00:00' ?    <div className="col-lg-4  wow fadeInUp" data-wow-delay="0.2s">
+                      <label id="hey" className="service-item team-item text-center rounded overflow-hidden">
+                        <div className="rounded-circle overflow-hidden m-4">
+                          <img className="img-fluid" src={luncha} alt="No pic" />
+                        </div>
+                        <i className="fa fa-hamburger fa-2x text-primary" />
+                        <h5 className="mb-0">Lunch</h5>
+                        <div className="d-flex justify-content-center">
+                        <h5 style={{color:"red"}}>Time Out!!</h5>
+                        </div>
+                      </label>
+                    </div> 
+                    :
+                    <div className="col-lg-4  wow fadeInUp" data-wow-delay="0.2s">
+                      <label id="hey" className="service-item team-item text-center rounded overflow-hidden">
+                        <div className="rounded-circle overflow-hidden m-5">
+                          <img className="img-fluid" src={luncha} alt="No pic" />
+                        </div>
+                        <i className="fa fa-hamburger fa-2x text-primary" />
+                        <h5 className="mb-0">Lunch</h5>
+                        <div className="d-flex justify-content-center">
+                          <input type='checkbox' className="form-check-input btn-square my-2" onChange={(e) => setLunch(e.target.checked)} ></input>
+                        </div>
+                      </label>
+                    </div>}
+
+                  {new Date(datenew).toLocaleDateString("en-US") > new Date().toLocaleDateString("en-US") || new Date(datenew).toLocaleDateString("en-US") < new Date().toLocaleDateString("en-US") || new Date().toLocaleTimeString('en-US', { hour12: false }) >= '15:30:00'?
+                  <div className="col-lg-4 wow fadeInUp" data-wow-delay="0.1s">
+                  <label id="hey" className="service-item team-item text-center rounded overflow-hidden">
+                    <div className="rounded-circle overflow-hidden m-4">
+                      <img className="img-fluid" src={dinnera} alt="No pic" />
+                    </div>
+                    <i className="fa fa-utensils fa-2x text-primary" />
+                    <h5 className="mb-0">Dinner</h5>
+                    <div className="d-flex justify-content-center">
+                    <h5 style={{color:"red"}}>Time Out!!</h5>
+                    </div>
+                  </label>
+                </div>
+                  :
+                  <div className="col-lg-4 wow fadeInUp" data-wow-delay="0.1s">
+                    <label id="hey" className="service-item team-item text-center rounded overflow-hidden">
+                      <div className="rounded-circle overflow-hidden m-5">
+
+                        <img className="img-fluid" src={dinnera} alt="No pic" />
+                      </div>
+                      <i className="fa fa-utensils fa-2x text-primary" />
+                      <h5 className="mb-0">Dinner</h5>
+                      <div className="d-flex justify-content-center">
+                        <input type="checkbox" className="form-check-input btn-square my-2" onChange={(e) => setDinner(e.target.checked)} />
+                      </div>
+                    </label>
+                  </div>}
+                  <div className="row g-4">
+                    <div className="col-6 my-2 mx-auto">
+                      <button className="btn btn-primary w-100 " type="submit">Submit</button>
+                    </div>
+                    {username.map((get, index) =>
+                      <div className="col-6 my-2 mx-auto" key={index}>{console.log(get.date)}
+                        <button className="btn btn-warning w-100 " type="button" onClick={() => edit(get._id)}>  {get.date !== date11? formattedNext : formattedToday}  EDIT</button>
+                      </div>)}
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </form>
+      </>
+    );
+  }
+}
